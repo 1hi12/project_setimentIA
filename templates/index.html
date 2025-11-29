@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sentiment Analysis</title>
+
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #eef1f4;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+    }
+
+    .container {
+      margin-top: 60px;
+      width: 620px;
+      background: #ffffff;
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+    }
+
+    h2 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 8px;
+      color: #2c2c2c;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    .info {
+      background: #e6f4ff;
+      border-left: 4px solid #2d63e2;
+      padding: 10px 14px;
+      font-size: 14px;
+      color: #174a8b;
+      border-radius: 8px;
+      margin-bottom: 18px;
+    }
+
+    label {
+      font-weight: 500;
+      color: #444;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 14px;
+      font-size: 15px;
+      border-radius: 10px;
+      border: 1px solid #c7cbd1;
+      resize: vertical;
+      box-sizing: border-box;
+      background: #fafafa;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #7ea9ff;
+      background: #fff;
+      box-shadow: 0 0 5px rgba(0, 92, 255, 0.2);
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 18px;
+      font-size: 16px;
+      background: #2d63e2;
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #234db2;
+    }
+
+    .error {
+      background: #ffe5e5;
+      color: #b30000;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: none;
+    }
+
+    pre {
+      background: #f0f2f4;
+      color: #222;
+      padding: 16px;
+      margin-top: 22px;
+      border-radius: 12px;
+      overflow-x: auto;
+      font-size: 14px;
+      border: 1px solid #d9dee4;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+
+</head>
+<body>
+
+  <div class="container">
+    <h2>Sentiment Analysis</h2>
+
+    <div class="info">
+      English text only — the model is trained exclusively on English sentences.
+    </div>
+
+    <label for="text">Enter English text to analyze:</label>
+    <textarea id="text" rows="6">I love this project ❤️</textarea>
+
+    <div class="error" id="errorBox">❌ Please enter English text only.</div>
+
+    <button onclick="send()">Analyze</button>
+
+    <pre id="out">{ Result will appear here… }</pre>
+  </div>
+
+  <script>
+
+    function isEnglish(text) {
+      // Regex: detects French words / accents
+      const frenchPattern = /[éèêëàâäîïôöùûüç]/i;
+
+      // Or detect common French words
+      const commonFrench = /\b(le|la|les|une|des|est|avec|pour|ici|dans|que|mais|sur)\b/i;
+
+      return !(frenchPattern.test(text) || commonFrench.test(text));
+    }
+
+    async function send() {
+      const txt = document.getElementById("text").value.trim();
+      const errorBox = document.getElementById("errorBox");
+
+      if (!txt) {
+        errorBox.style.display = "block";
+        errorBox.innerText = "❌ Please enter some text.";
+        return;
+      }
+
+      // English validation
+      if (!isEnglish(txt)) {
+        errorBox.style.display = "block";
+        errorBox.innerText = "❌ English text only. French is not supported.";
+        return;
+      }
+
+      errorBox.style.display = "none";
+
+      document.getElementById("out").innerText = "Analyzing...";
+
+      try {
+        const res = await fetch("/predict", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ text: txt })
+        });
+
+        if (!res.ok) throw new Error("Server error");
+
+        const data = await res.json();
+        document.getElementById("out").innerText = JSON.stringify(data, null, 2);
+
+      } catch (err) {
+        document.getElementById("out").innerText = "Error: Unable to reach the API.";
+      }
+    }
+  </script>
+
+</body>
+</html>
